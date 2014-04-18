@@ -59,9 +59,13 @@ def makeRefOmesDB(UniprotRefProtFasta="", UniprotG2acc="", outputDB=""):
 	conn = sqlite.connect(outputDB)
 	c = conn.cursor()
 	# Make reference proteome table, g2acc table
-	createProt_G2accTablesStmt = "CREATE TABLE IF NOT EXIST refProt\
-	 (pid INT AUTOINCREMENT PRIMARY KEY,\
-	 UniprotAC VARCHAR UNIQUE, plength INT,\
-	 aaSeq TEXT, pdescription VARCHAR);\
-	CREATE TABLE IF NOT EXIST G2acc (gid INT AUTOINCREMENT)"
+	createProt_G2accTablesStmt = "CREATE TABLE IF NOT EXIST refProt \
+	 (pid INT AUTOINCREMENT PRIMARY KEY, \
+	 UniprotAC_refProt VARCHAR UNIQUE, plength INT, \
+	 aaSeq TEXT, \
+	 pdescription VARCHAR); \
+	CREATE TABLE IF NOT EXIST G2acc \
+	 (accid INT AUTOINCREMENT PRIMARY KEY, \
+	 ENSG_G2acc VARCHAR, \
+	 UniprotAC_G2acc VARCHAR UNIQUE);"
 	# Make gene-protein association table
