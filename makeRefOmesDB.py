@@ -46,26 +46,37 @@ def makeRefOmesDB(UniprotRefProtFasta="", UniprotG2acc="", outputDB=""):
 	# Get data from files.
 	print("Extracting protein data from fasta...")
 	faParser = SeqIO.parse(UniprotRefProtFasta, "fasta")
-	intoRefProt = [(record.id.split("|")[1], len(record),\
-			record.seq, record.description) \
+	intoRefProt = [(record.name.split("|")[1], int(len(record)),\
+			str(record.seq), str(record.description)) \
 			for record in faParser]
 	
 	print("Extracting gene protein association from g2acc...")
 	with open(UniprotG2acc) as g2acc:
-		intoG2acc = g2acc.readlines()
-	intoG2acc = [(line.split(" ")[1], line.split(" ")[2]) \
-			for line in intoG2acc]
+		linesG2acc = g2acc.readlines()
+	intoG2acc = [(line.split("\t")[0], line.split("\t")[1]) \
+			for line in linesG2acc]
 
 	conn = sqlite.connect(outputDB)
 	c = conn.cursor()
 	# Make reference proteome table, g2acc table
-	createProt_G2accTablesStmt = "CREATE TABLE IF NOT EXIST refProt \
-	 (pid INT AUTOINCREMENT PRIMARY KEY, \
-	 UniprotAC_refProt VARCHAR UNIQUE, plength INT, \
+	createProt_G2accTablesStmt = "CREATE TABLE IF NOT EXISTS refProt \
+	 (pid INTEGER PRIMARY KEY AUTOINCREMENT, \
+	 UniprotAC_refProt VARCHAR UNIQUE, \
+	 plength INTEGER, \
 	 aaSeq TEXT, \
 	 pdescription VARCHAR); \
-	CREATE TABLE IF NOT EXIST G2acc \
-	 (accid INT AUTOINCREMENT PRIMARY KEY, \
+	CREATE TABLE IF NOT EXISTS G2acc \
+	 (g2accid INTEGER PRIMARY KEY AUTOINCREMENT, \
 	 ENSG_G2acc VARCHAR, \
 	 UniprotAC_G2acc VARCHAR UNIQUE);"
-	# Make gene-protein association table
+	
+	c.executescript(createProt_G2accTablesStmt)
+	c.executemany("INSERT INTO refProt \
+	(UniprotAC_refProt, plength, aaSeq, pdescription) \
+	VALUES (?,?,?,?)", intoRefProt)
+	c.executemany("INSERT INTO G2acc \
+	(ENSG_G2acc, UniprotAC_G2acc) VALUES (?,?)", intoG2acc)
+	
+	conn.commit()
+	conn.close()
+	
